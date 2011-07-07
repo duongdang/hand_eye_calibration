@@ -4,8 +4,8 @@
      hand_eye_calibration
 
   </description>
-  <author>Ngoc Duong DangB1790561337842</author>
-  <license>BSD</license>
+  <author>Duong Dang</author>
+  <license>L-GPL3</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/hand_eye_calibration</url>
 
