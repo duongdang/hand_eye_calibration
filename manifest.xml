@@ -1,0 +1,14 @@
+<package>
+  <description brief="hand_eye_calibration">
+
+     hand_eye_calibration
+
+  </description>
+  <author>Ngoc Duong DangB1790561337842</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hand_eye_calibration</url>
+
+</package>
+
+
