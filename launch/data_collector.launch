@@ -1,0 +1,15 @@
+<launch>
+  <node name="controller" pkg="demo0611" type="camera_calibrator.py"
+        args="-r openhrp"
+        />
+  <node ns = "/wide/left" name="recorder" pkg="hand_eye_calibration"
+        type="recorder.py"        />
+  <node ns = "/wide/right" name="recorder" pkg="hand_eye_calibration"
+        type="recorder.py"        />
+  <node ns = "/narrow/left" name="recorder" pkg="hand_eye_calibration"
+        type="recorder.py"        />
+  <node ns = "/narrow/right" name="recorder" pkg="hand_eye_calibration"
+        type="recorder.py"        />
+
+        />
+</launch>

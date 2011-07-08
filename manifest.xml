@@ -8,6 +8,10 @@
   <license>L-GPL3</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/hand_eye_calibration</url>
+  <depend package="rospy"/>
+  <depend package="sensor_msgs"/>
+  <depend package="demo0611"/>
+  <depend package="rosbag"/>
 
 </package>
 
