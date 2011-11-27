@@ -1,0 +1,2 @@
+cvxopt:
+  ubuntu: python-cvxopt
