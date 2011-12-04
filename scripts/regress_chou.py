@@ -7,18 +7,17 @@ from sensor_msgs.msg import CameraInfo, Image
 from geometry_msgs.msg import TransformStamped, Transform, PoseStamped
 import itertools
 import random
-from tf import transformations
-import tf
+from robotviewer import transformations
 from numpy import linalg
 import math
-
+import doctest
 def eig(A):
     """
     Return eigenvalues and eigenvectors in ascending order of realpart then
     imag part of eigenvalues.
     """
     lambdas, vs = linalg.eig(A)
-    lvs = [(lambdas[i], vs[i]) for i in range(len(vs))]
+    lvs = [(lambdas[i], vs[:,i]) for i in range(len(lambdas))]
 
     def lv_cmp(lv1, lv2):
         lambda1 = lv1[0]
@@ -90,13 +89,13 @@ def pos_to_mat(data):
         data = data.pose
     if 'position' in dir(data):
         translation = [data.position.x, data.position.y, data.position.z]
-        rotation = [data.orientation.x, data.orientation.y,
-                       data.orientation.z, data.orientation.w]
+        rotation = [data.orientation.w, data.orientation.x, data.orientation.y,
+                       data.orientation.z, ]
     else:
         translation = [data.translation.x, data.translation.y,
                        data.translation.z]
-        rotation = [data.rotation.x, data.rotation.y,
-                       data.rotation.z, data.rotation.w]
+        rotation = [ data.rotation.w, data.rotation.x, data.rotation.y,
+                       data.rotation.z,]
     res = transformations.quaternion_matrix(rotation)
     res[:3,3] = translation
     return res
@@ -135,10 +134,82 @@ def regress_pose(data):
 
     return regress_Hs(Hls, Hcs)
 
+def rotation_from_matrix(M):
+    th, u, p = transformations.rotation_from_matrix(M)
+    if th < 0:
+        th = -th
+        u = -u
+    return th, u, p
+
 def regress_Hs(Hls, Hcs):
-    # Optimization of quaternion
+    """
+    >>> Hx  = numpy.array([ \
+    [-0.88405797,-0.40579710, -0.23188406, 11.00000000], \
+    [-0.40579710, 0.42028986,  0.81159420, 21.00000000], \
+    [-0.23188406, 0.81159420, -0.53623188,-18.00000000], \
+    [ 0         , 0         , 0          , 1] \
+    ])
+    >>> Hl1 = numpy.array([ \
+    [-0.87179487, 0.48717949, -0.05128205,  5.00000000], \
+    [ 0.33333333, 0.66666667,  0.66666667, -4.00000000], \
+    [ 0.35897436, 0.56410256, -0.74358974,  3.00000000], \
+    [ 0         , 0         , 0          , 1] \
+    ])
+    >>> Hl2 = numpy.array([ \
+    [-0.70114943, 0.02298850, -0.71264368,  2.00000000], \
+    [ 0.66666667,-0.33333333, -0.66666667, -3.00000000], \
+    [-0.25287356,-0.94252874,  0.21839080,  9.00000000], \
+    [ 0         , 0         , 0          , 1] \
+    ])
+    >>> Hc1 = numpy.array([ \
+    [-0.13831397,-0.61660716, -0.77502572,  0.131178  ], \
+    [-0.84328869,-0.33704404,  0.41864724, 34.399851  ], \
+    [-0.51935868, 0.71147518, -0.47335997,-41.570048  ], \
+    [ 0         , 0         , 0          , 1] \
+    ])
+    >>> Hc2 = numpy.array([ \
+    [-0.69307617, 0.66439727, -0.27968142,  7.6275196 ], \
+    [ 0.01005777,-0.37903028, -0.92532961, -3.1216059 ], \
+    [-0.72079419,-0.64413687,  0.25601450, -8.9446943 ], \
+    [ 0         , 0         , 0          , 1] \
+    ])
+    >>> numpy.linalg.norm(numpy.dot(Hl1, Hx) - numpy.dot(Hx, Hc1)) < 1e-6
+    True
+    >>> numpy.linalg.norm(numpy.dot(Hl2, Hx) - numpy.dot(Hx, Hc2)) < 1e-6
+    True
+    >>> exp_ul1 = -numpy.array([ 0.22798115, 0.91168461, 0.34188173])
+    >>> exp_ul2 = numpy.array([-0.32929278,-0.54882130, 0.76834982])
+    >>> exp_uc1 = -numpy.array([-0.65073141, 0.56815128, 0.50373878])
+    >>> exp_uc2 = numpy.array([ 0.33565393, 0.52655029,-0.78107611])
+    >>> exp_th1 = 360-193.002824
+    >>> exp_th2 = 155.239701
+    >>> thl1, ul1, pl1 = rotation_from_matrix(Hl1)
+    >>> thl2, ul2, pl2 = rotation_from_matrix(Hl2)
+    >>> thc1, uc1, pc1 = rotation_from_matrix(Hc1)
+    >>> thc2, uc2, pc2 = rotation_from_matrix(Hc2)
+    >>> thl1 *= 180./math.pi
+    >>> thl2 *= 180./math.pi
+    >>> thc1 *= 180./math.pi
+    >>> thc2 *= 180./math.pi
+    >>> if not numpy.linalg.norm(ul1 - exp_ul1) < 1e-4: print ul1
+    >>> if not numpy.linalg.norm(ul2 - exp_ul2) < 1e-4: print ul2
+    >>> if not numpy.linalg.norm(uc1 - exp_uc1) < 1e-4: print uc1
+    >>> if not numpy.linalg.norm(uc2 - exp_uc2) < 1e-4: print uc2
+    >>> if not abs(thl1 - exp_th1) < 1e-2: print thl1
+    >>> if not abs(thl2 - exp_th2) < 1e-2: print thl2
+    >>> if not abs(thc1 - exp_th1) < 1e-2: print thc1
+    >>> if not abs(thc2 - exp_th2) < 1e-2: print thc2
+
+    >>> Hx_reg = regress_Hs([Hl1, Hl2], [Hc1, Hc2])
+    >>> numpy.allclose(Hx_reg[:3,:3], Hx[:3,:3])
+    True
+    >>> numpy.allclose(Hx_reg[:3,3], Hx[:3,3])
+    True
+    """
+
     E = None
     A2 = numpy.zeros((4,4))
+
     for i in range(len(Hls)):
         Hl = Hls[i]
         Hc = Hcs[i]
@@ -152,58 +223,11 @@ def regress_Hs(Hls, Hcs):
         else:
             E = numpy.append(E, lhA, axis = 0)
 
-        Rl = Hl[:3,:3]
-        Rc = Hc[:3,:3]
-        lambdas_l, V_l  = eig(Rl)
-        lambdas_c, V_c   = eig(Rc)
-
-        for i in range(2,3):
-            v_prime = numpy.zeros(4)
-            v = numpy.zeros(4)
-            print lambdas_c[i], lambdas_l[i]
-            for j in range(3):
-                v[1+j]       = V_c[i][j]
-                v_prime[1+j] = V_l[i][j]
-
-            Ei = (quat_plus(v_prime) - quat_bar(v))
-
-            A2i = numpy.dot(numpy.transpose(Ei), Ei)
-
-            A2 += A2i
-
-
     Et = numpy.transpose(E)
     A = numpy.dot(Et, E)
     lambdas, vs = eig(A)
-    print "Chou"
-    print "eigenvalues: ", lambdas
-
     qx = vs[0]
-    #print "E*qx=", numpy.dot(E,qx)
-    # qx = [1., 0., 1., 0. ]
-    #if qx[0] < 0:
-    #    qx = -qx
     Ax = transformations.quaternion_matrix(qx)
-    Ax = Ax[:3,:3]
-    print "qx: ", qx
-    print "rpy(rad): ", [1*a for a in transformations.euler_from_matrix(Ax)]
-    print "rpy(deg): ", [180*a/math.pi for a in transformations.euler_from_matrix(Ax)]
-    print "---"
-
-    lambdas, vs = eig(A2)
-    print "Horaud"
-    print "eigenvalues: ", lambdas
-
-    qx = vs[0]
-    #print "E*qx=", numpy.dot(E,qx)
-    # qx = [1., 0., 1., 0. ]
-    if qx[0] < 0:
-        qx = -qx
-    Ax = transformations.quaternion_matrix(qx)
-    Ax = Ax[:3,:3]
-    print "qx: ", qx
-    print "rpy(rad): ", [1*a for a in transformations.euler_from_matrix(Ax)]
-    print "rpy(deg): ", [180*a/math.pi for a in transformations.euler_from_matrix(Ax)]
 
     # Optimization of translation
     A = None
@@ -214,29 +238,39 @@ def regress_Hs(Hls, Hcs):
         rl = Hl[:3,3]
         rc = Hc[:3,3]
         Al = Hl[:3,:3]
-        # print Al - numpy.eye(3)
         if A == None:
             A = Al - numpy.eye(3)
         else:
             A = numpy.append(A, Al - numpy.eye(3), axis = 0)
 
-        b = numpy.append(b, numpy.dot(Ax, rc) - rl)
+        b = numpy.append(b, numpy.dot(Ax[:3,:3], rc) - rl, axis = 0)
+        # print rc
+        # print Ax
+        # print numpy.dot(Ax[:3,3], rc)
+        # print "rl:",rl
+        # print Al
+        # print "---"
 
     # leastquare A*rx = b
     # print A
     # print b
-    rx, res, rank, s = linalg.lstsq(A, b, 1e-6)
-    #print "residual: ", res
-    print "rx: ", rx
-    #print numpy.dot(A, rx) -b
 
-def test
+    rx, res, rank, s = linalg.lstsq(A, b, 1e-6)
+    #print rx, res, rank, s
+    Ax[:3,3] = rx
+    return Ax
+
+def test():
+    import doctest
+    doctest.testmod()
 
 def main():
     # print quat_plus([1,2,3,4])
     # print quat_bar([1,2,3,4])
-    data = pickle.load(open('pos.pickle'))
-    regress_pose(data)
+    test()
+    #data = pickle.load(open('pos.pickle'))
+    #print regress_pose(data)
+
 
 if __name__ == '__main__':
     main()
