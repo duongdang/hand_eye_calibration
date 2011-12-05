@@ -11,6 +11,7 @@ from robotviewer import transformations
 from numpy import linalg
 import math
 import doctest
+
 def eig(A):
     """
     Return eigenvalues and eigenvectors in ascending order of realpart then
@@ -268,8 +269,8 @@ def main():
     # print quat_plus([1,2,3,4])
     # print quat_bar([1,2,3,4])
     test()
-    #data = pickle.load(open('pos.pickle'))
-    #print regress_pose(data)
+    data = pickle.load(open('pos.pickle'))
+    print regress_pose(data)
 
 
 if __name__ == '__main__':
