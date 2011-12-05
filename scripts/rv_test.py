@@ -11,7 +11,6 @@ from geometry_msgs.msg import PoseStamped
 import message_filters
 import numpy, numpy.linalg
 
-
 class RvCollector(object):
     stamps = []
     poses = []
@@ -86,10 +85,15 @@ class RvCollector(object):
 
         ts = message_filters.TimeSynchronizer((hand_sub, head_sub, cam_sub), 50)
         ts.registerCallback(self.callback)
+
         while raw_input() != "q":
             self.collect = True
 
         from regress_chou import regress_pose, regress_Hs
-        print regress_Hs(self.Hls, self.Hcs)
+        Ax, E, lambdas, res = regress_Hs(self.Hls, self.Hcs)
+        quat = tf.transformations.quaternion_from_matrix(Ax)
+        print "quat:",quat
+        print "xyz:", Ax[:3,3]
+        print "lambdas: (smaller the better)", lambdas
 
 RvCollector()

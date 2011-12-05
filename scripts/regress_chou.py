@@ -135,6 +135,24 @@ def regress_pose(data):
 
     return regress_Hs(Hls, Hcs)
 
+
+def regress_pose2(link_poses, chessboard_poses):
+    N = len(link_poses)
+    Hls = []
+    Hcs = []
+    for i in range(N):
+        for j in range(i+1, N):
+            Tl_bef = link_poses[i]
+            Tl_aft = link_poses[j]
+            Tg_bef = chessboard_poses[i]
+            Tg_aft = chessboard_poses[j]
+            Hl = numpy.dot(numpy.linalg.inv(Tl_bef), Tl_aft)
+            Hc = numpy.dot(Tg_bef, numpy.linalg.inv(Tg_aft))
+            Hls.append(Hl)
+            Hcs.append(Hc)
+
+    return regress_Hs(Hls, Hcs)
+
 def rotation_from_matrix(M):
     th, u, p = transformations.rotation_from_matrix(M)
     if th < 0:
@@ -259,7 +277,7 @@ def regress_Hs(Hls, Hcs):
     rx, res, rank, s = linalg.lstsq(A, b, 1e-6)
     #print rx, res, rank, s
     Ax[:3,3] = rx
-    return Ax
+    return Ax, E, lambdas, res
 
 def test():
     import doctest
