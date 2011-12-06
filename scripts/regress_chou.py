@@ -129,17 +129,15 @@ def regress_pose(data):
         # print Hl
         # print Hc
         # print "===============\n\n"
-
         Hls.append(Hl)
         Hcs.append(Hc)
-
     return regress_Hs(Hls, Hcs)
 
 
 def regress_pose2(link_poses, chessboard_poses):
     N = len(link_poses)
-    Hls = []
-    Hcs = []
+    Hs = []
+
     for i in range(N):
         for j in range(i+1, N):
             Tl_bef = link_poses[i]
@@ -148,10 +146,27 @@ def regress_pose2(link_poses, chessboard_poses):
             Tg_aft = chessboard_poses[j]
             Hl = numpy.dot(numpy.linalg.inv(Tl_bef), Tl_aft)
             Hc = numpy.dot(Tg_bef, numpy.linalg.inv(Tg_aft))
-            Hls.append(Hl)
-            Hcs.append(Hc)
+            Hs.append((Hl,Hc))
+    def sorter(move1, move2):
+        Hl1 = move1[0]
+        Hl2 = move2[0]
+        if numpy.linalg.norm(Hl1[:3,3]) < numpy.linalg.norm(Hl2[:3,3]):
+            return 1
+        elif numpy.linalg.norm(Hl1[:3,3]) > numpy.linalg.norm(Hl2[:3,3]):
+            return -1
+        elif numpy.linalg.norm(Hl1[:3,3]) == numpy.linalg.norm(Hl2[:3,3]):
+            return 0
 
-    return regress_Hs(Hls, Hcs)
+    Hs = sorted(Hs, cmp = sorter)
+    #print Hs[0]
+    #Hs = Hs[:20]
+    #print "Running on {0} motions.".format(len(Hs))
+    N = [3,5,10,20,50,100,500,len(Hs)]
+    results = []
+    for n in N:
+        result = regress_Hs(Hs[:n])
+        results.append(result)
+    return results
 
 def rotation_from_matrix(M):
     th, u, p = transformations.rotation_from_matrix(M)
@@ -160,7 +175,7 @@ def rotation_from_matrix(M):
         u = -u
     return th, u, p
 
-def regress_Hs(Hls, Hcs):
+def regress_Hs(Hs):
     """
     >>> Hx  = numpy.array([ \
     [-0.88405797,-0.40579710, -0.23188406, 11.00000000], \
@@ -219,7 +234,7 @@ def regress_Hs(Hls, Hcs):
     >>> if not abs(thc1 - exp_th1) < 1e-2: print thc1
     >>> if not abs(thc2 - exp_th2) < 1e-2: print thc2
 
-    >>> Hx_reg = regress_Hs([Hl1, Hl2], [Hc1, Hc2])
+    >>> Hx_reg = regress_Hs([[Hl1, Hc1], [Hl2, Hc2]])[0]
     >>> numpy.allclose(Hx_reg[:3,:3], Hx[:3,:3])
     True
     >>> numpy.allclose(Hx_reg[:3,3], Hx[:3,3])
@@ -228,10 +243,7 @@ def regress_Hs(Hls, Hcs):
 
     E = None
     A2 = numpy.zeros((4,4))
-
-    for i in range(len(Hls)):
-        Hl = Hls[i]
-        Hc = Hcs[i]
+    for (Hl, Hc) in Hs:
         pl = transformations.quaternion_from_matrix(Hl)
         pc = transformations.quaternion_from_matrix(Hc)
 
@@ -251,9 +263,7 @@ def regress_Hs(Hls, Hcs):
     # Optimization of translation
     A = None
     b = []
-    for i in range(len(Hls)):
-        Hl = Hls[i]
-        Hc = Hcs[i]
+    for Hl, Hc in Hs:
         rl = Hl[:3,3]
         rc = Hc[:3,3]
         Al = Hl[:3,:3]
@@ -277,7 +287,7 @@ def regress_Hs(Hls, Hcs):
     rx, res, rank, s = linalg.lstsq(A, b, 1e-6)
     #print rx, res, rank, s
     Ax[:3,3] = rx
-    return Ax, E, lambdas, res
+    return Ax, E, lambdas, res, len(Hs)
 
 def test():
     import doctest
@@ -287,8 +297,8 @@ def main():
     # print quat_plus([1,2,3,4])
     # print quat_bar([1,2,3,4])
     test()
-    data = pickle.load(open('pos.pickle'))
-    print regress_pose(data)
+    #data = pickle.load(open('pos.pickle'))
+    #print regress_pose(data)
 
 
 if __name__ == '__main__':

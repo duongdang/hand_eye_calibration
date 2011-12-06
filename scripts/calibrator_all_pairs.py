@@ -10,6 +10,8 @@ import tf
 from geometry_msgs.msg import PoseStamped
 import message_filters
 import numpy, numpy.linalg
+import datetime
+import pickle
 
 class Calibrator(object):
     stamps = []
@@ -49,6 +51,8 @@ class Calibrator(object):
         stamp = hand_pose.header.stamp
         if stamp in self.stamps:
             self.done = True
+            print "Done"
+            return
         #if len(self.T_hands) > 2:
         #    self.done = True
         self.stamps.append(stamp)
@@ -58,7 +62,7 @@ class Calibrator(object):
         self.T_head = self.pose_to_matrix(head_pose)
 
         # T_chessboard, T_hand_head in chessboard frame
-        self.T_chessboard  = numpy.linalg.inv(self.pose_to_matrix(chessboard_pose))
+        self.T_chessboard  = self.pose_to_matrix(chessboard_pose)
         self.T_hand_head = numpy.dot(numpy.linalg.inv(self.T_hand),
                                      self.T_head)
         self.T_hands.append(self.T_hand)
@@ -69,6 +73,9 @@ class Calibrator(object):
 
 
     def __init__(self):
+        pass
+
+    def spin(self):
         rospy.init_node('calibrator')
         hand_pose_topic = rospy.get_param("~hand_pose",
                                           '/robotviewer/pose/HRP2JRL/RARM_JOINT5')
@@ -86,23 +93,47 @@ class Calibrator(object):
 
         ts = message_filters.TimeSynchronizer((hand_sub, head_sub, chessboard_sub), 50)
         ts.registerCallback(self.callback)
-
         #print "Enter 'done' when finish"
-        while not self.done:
+        while not (self.done or rospy.is_shutdown()):
             pass
+        self.callback = None
 
-        from regress_chou import regress_pose, regress_Hs, regress_pose2
-        Ax, E, lambdas, res = regress_pose2(self.T_hand_heads, self.T_chessboards)
+        suff = datetime.datetime.now().strftime("%Y%m%d%H%M")
+        pname = None
+        pname = "/tmp/calib_poses_{0}.pickle".format(suff)
+        i = 0
+        while not pname or os.path.isfile(pname):
+            i += 1
+            pname = "/tmp/calib_poses_{0}_{1}.png".format(suff, i)
+
+        f = open(pname,'w')
+        pickle.dump([self.T_hands, self.T_heads, self.T_hand_heads, self.T_chessboards],f)
+        f.close()
 
 
+if __name__ == '__main__':
+    cal = Calibrator()
 
+    if sys.argv[1:]:
+        p_fn = sys.argv[1]
+        f = open(p_fn)
+        data =  pickle.load(f)
+        cal.T_hands, cal.T_heads, cal.T_hand_heads, cal.T_chessboards = data
+    else:
+        cal.spin()
+    print len(cal.T_hand_heads), len(cal.T_chessboards)
+    from regress_chou import regress_pose, regress_Hs, regress_pose2
+    for Ax, E, lambdas, res, samples in regress_pose2(cal.T_hand_heads, cal.T_chessboards):
         quat = tf.transformations.quaternion_from_matrix(Ax)
+        print "Optimized on {0} (pair) poses".format(samples)
         print "quat:",quat
         print "xyz:", Ax[:3,3]
         print "lambdas: (smaller the better)", lambdas
-        f = open("/tmp/calib_poses.pickle",'w')
-        import pickle
-        pickle.dump(self,f)
-        f.close()
-
-Calibrator()
+        opt_to_ros = numpy.eye(4)
+        opt_to_ros[:3,0] = [0, 0,1]
+        opt_to_ros[:3,1] = [-1,0,0]
+        opt_to_ros[:3,2] = [0, -1,0]
+        A_ros = numpy.dot(Ax, opt_to_ros)
+        rpy_ros = tf.transformations.euler_from_matrix(A_ros)
+        print "ros_params", rpy_ros, A_ros[:3,3]
+        print "---"

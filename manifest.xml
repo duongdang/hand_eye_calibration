@@ -11,9 +11,10 @@
   <depend package="rospy"/>
   <depend package="tf"/>
   <depend package="sensor_msgs"/>
+  <depend package="message_filters"/>
   <depend package="demo0611"/>
   <depend package="rosbag"/>
-  <rosdep name="cvxopt"/> 
+  <rosdep name="cvxopt"/>
 </package>
 
 
