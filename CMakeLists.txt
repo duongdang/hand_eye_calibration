@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-
 # Set the build type.  Options are:
 #  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
 #  Debug          : w/ debug symbols, w/o optimization
@@ -29,4 +28,12 @@ rosbuild_genmsg()
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rosbuild_add_executable(fake_sync nodes/fake_sync.cpp)
+find_package(OpenCV REQUIRED)
+
+rosbuild_add_executable(calibrator_tsai nodes/calibrator_tsai.cpp)
+target_link_libraries(calibrator_tsai ${OpenCV_LIBS} yaml-cpp)
+
+rosbuild_add_executable(fake_sync
+  nodes/fake_sync.cpp
+  )
+
