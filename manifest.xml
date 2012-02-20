@@ -13,7 +13,6 @@
   <depend package="tf"/>
   <depend package="sensor_msgs"/>
   <depend package="message_filters"/>
-  <depend package="demo0611"/>
   <depend package="rosbag"/>
   <depend package="visp"/>
   <depend package="common_rosdeps" />
