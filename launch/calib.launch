@@ -10,8 +10,8 @@
   <arg name="rect0_size_y" default="0.016"/>
   <arg name="grid0_size_x" default="5"/>
   <arg name="grid0_size_y" default="4"/>
-  <arg name="world_frame"  default="right_wrist"/>
-  <arg name="link_frame"   default="gaze"/>
+  <arg name="world_frame"  default="RARM_LINK5"/>
+  <arg name="link_frame"   default="HEAD_LINK1"/>
   <param name="robot_description" textfile="$(arg urdf)" />
   <param name="use_sim_time" type="bool" value="true" />
 
