@@ -246,9 +246,10 @@ def regress_Hs(Hs):
     for (Hl, Hc) in Hs:
         pl = transformations.quaternion_from_matrix(Hl)
         pc = transformations.quaternion_from_matrix(Hc)
-
+        angle, direc, point = rotation_from_matrix(Hl)
+        weight = abs(angle) + numpy.linalg.norm(Hl[:3,3])
         lhA = quat_plus(pl) - quat_bar(pc)
-
+        #lhA*= weight
         if E == None:
             E = lhA
         else:
@@ -267,12 +268,18 @@ def regress_Hs(Hs):
         rl = Hl[:3,3]
         rc = Hc[:3,3]
         Al = Hl[:3,:3]
-        if A == None:
-            A = Al - numpy.eye(3)
-        else:
-            A = numpy.append(A, Al - numpy.eye(3), axis = 0)
+        angle, direc, point = rotation_from_matrix(Hl)
+        weight = abs(angle) + numpy.linalg.norm(Hl[:3,3])
 
-        b = numpy.append(b, numpy.dot(Ax[:3,:3], rc) - rl, axis = 0)
+        Ai = Al - numpy.eye(3)
+        #Ai *= weight
+        if A == None:
+            A = Ai
+        else:
+            A = numpy.append(A, Ai, axis = 0)
+        bi = numpy.dot(Ax[:3,:3], rc) - rl
+        #bi *= weight
+        b = numpy.append(b, bi, axis = 0)
         # print rc
         # print Ax
         # print numpy.dot(Ax[:3,3], rc)

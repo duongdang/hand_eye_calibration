@@ -126,6 +126,7 @@ if __name__ == '__main__':
     for Ax, E, lambdas, res, samples in regress_pose2(cal.T_hand_heads, cal.T_chessboards):
         quat = tf.transformations.quaternion_from_matrix(Ax)
         print "Optimized on {0} (pair) poses".format(samples)
+        print "Ax:", Ax
         print "quat:",quat
         print "xyz:", Ax[:3,3]
         print "lambdas: (smaller the better)", lambdas

@@ -47,10 +47,6 @@ class Calibrator(object):
         else:
             print self.hand_pos_cam_pos
 
-
-
-
-
     def hand_pos_cb(self, data):
         self.hand_pos = data.transform
 

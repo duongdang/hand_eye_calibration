@@ -1,0 +1,49 @@
+<launch>
+  <!-- declare args to be passed in -->
+  <param name="use_sim_time" value="true" />
+
+  <arg name="camera" default="/wide/left"/>
+  <arg name="bag"/>
+  <arg name="js_topic" default="joint_states"/>
+  <arg name="urdf" default="/home/nddang/src/ros/hrp2/hrp2_14_description/urdf/hrp2.urdf" />
+  <arg name="rect0_size_x" default="0.016"/>
+  <arg name="rect0_size_y" default="0.016"/>
+  <arg name="grid0_size_x" default="5"/>
+  <arg name="grid0_size_y" default="4"/>
+  <arg name="world_frame"  default="right_wrist"/>
+  <arg name="link_frame"   default="gaze"/>
+  <param name="robot_description" textfile="$(arg urdf)" />
+  <param name="use_sim_time" type="bool" value="true" />
+
+
+  <node ns="$(arg camera)" pkg="image_proc" type="image_proc" name="image_proc"/>
+
+  <node ns="$(arg camera)" pkg="checkerboard_detector2" type="checkerboard_detector2" respawn="false"
+        name="checkerboard_detector">
+    <param name="display" type="int" value="0"/>
+    <param name="frame_id" value="chessboard"/>
+    <param name="rect0_size_x" type="double" value="$(arg rect0_size_x)"/>
+    <param name="rect0_size_y" type="double" value="$(arg rect0_size_y)"/>
+    <param name="grid0_size_x" type="int" value="$(arg grid0_size_x)"/>
+    <param name="grid0_size_y" type="int" value="$(arg grid0_size_y)"/>
+  </node>
+
+  <node pkg="robot_state_publisher" type="state_publisher" name="rob_st_pub" >
+    <remap from="joint_states" to="$(arg js_topic)" />
+    <param name="robot_description" textfile="$(arg urdf)" />
+    <param name="publish_frequency" type="double" value="200" />
+  </node>
+
+  <node pkg="hand_eye_calibration" type="chessboard_listener.py"
+    name="chessboard_listener" output="screen">
+    <param name="world_frame" value="$(arg world_frame)"/>
+    <param name="link_frame" value="$(arg link_frame)"/>
+    <param name="cb_topic" value="$(arg camera)/pose0"/>
+    <param name="bag" value="$(arg bag)"/>
+    <param name="camera" value="$(arg camera)"/>
+  </node>
+
+  <node pkg="rosbag" type="play" name="bag_player" args="$(arg bag) --clock" required="true" />
+
+</launch>
+
