@@ -1,6 +1,6 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/JointState.h>
-#include "fake-synchronizer-impl.h"
+#include "fake_sync_template/fake-synchronizer-impl.h"
 using namespace sensor_msgs;
 using namespace message_filters;
 

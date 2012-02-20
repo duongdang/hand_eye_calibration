@@ -33,7 +33,6 @@ find_package(OpenCV REQUIRED)
 rosbuild_add_executable(calibrator_tsai nodes/calibrator_tsai.cpp)
 target_link_libraries(calibrator_tsai ${OpenCV_LIBS} yaml-cpp)
 
-rosbuild_add_executable(fake_sync
-  nodes/fake_sync.cpp
-  )
+rosbuild_add_executable(fake_sync nodes/fake_sync.cpp)
+
 
