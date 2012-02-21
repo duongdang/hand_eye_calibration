@@ -32,14 +32,14 @@ def main():
     chessboard_topic = rospy.get_param("~chessboard_topic")
     world_frame = rospy.get_param("~world_frame")
     link_frame  = rospy.get_param("~link_frame")
-    bag  = rospy.get_param("~bag")
+    data_name  = rospy.get_param("~data_name")
     camera = rospy.get_param("~camera")
     camera = camera.replace("/","_")
 
-    bag = bag.replace(".bag","")
-    bag = os.path.basename(bag)
+    data_name = data_name.replace(".bag","")
+    data_name = os.path.basename(data_name)
     path = os.path.abspath(os.path.dirname(__file__))
-    out_fn = os.path.join(path,"/tmp/{0}_{1}_poses.yaml".format(bag, camera))
+    out_fn = os.path.join(path,"/tmp/{0}_{1}_poses.yaml".format(data_name, camera))
     tf_listener = tf.TransformListener()
 
     yaml_data = []

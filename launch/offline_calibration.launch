@@ -1,0 +1,10 @@
+<launch>
+  <param name="use_sim_time" value="true" />
+  <arg name="bag"/>
+  <include file="$(find hand_eye_calibration)/launch/online_calibration.launch">
+    <arg name="data_name" value="$(arg bag)"/>
+  </include>
+  <node pkg="rosbag" type="play" name="bag_player" args="$(arg bag) --clock"
+  required="true"/>
+
+</launch>
