@@ -19,6 +19,22 @@
 using namespace sensor_msgs;
 using namespace message_filters;
 
+namespace {
+  YAML::Emitter& operator << (YAML::Emitter& out, const vpHomogeneousMatrix& m)
+  {
+    out << YAML::Flow;
+    out << YAML::BeginSeq;
+    for (unsigned i = 0; i < 4; i++)
+      for (unsigned j = 0; j < 4; j++)
+      {
+        out << m[i][j];
+      }
+
+    out << YAML::EndSeq;
+    return out;
+  }
+}
+
 
 int main(int argc, char **argv)
 {
@@ -57,9 +73,11 @@ int main(int argc, char **argv)
   }
   vpHomogeneousMatrix eMc;
   vpCalibration::calibrationTsai(nbPose, cMo, rMe, eMc);
+  YAML::Emitter yout;
+  yout << eMc;
   std::cout << eMc << std::endl;
   std::ofstream outf(argv[2], std::ios::out);
-  outf << eMc << std::endl;
+  outf << yout.c_str() << std::endl;
   outf.close();
   return 0;
 }
