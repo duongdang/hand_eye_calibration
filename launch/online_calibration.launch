@@ -1,9 +1,7 @@
 <launch>
   <!-- declare args to be passed in -->
-  <param name="use_sim_time" value="true" />
 
   <arg name="camera" default="/wide/left"/>
-  <arg name="bag"/>
   <arg name="js_topic" default="joint_states"/>
   <arg name="urdf" default="/home/nddang/src/ros/hrp2/hrp2_14_description/urdf/hrp2.urdf" />
   <arg name="rect0_size_x" default="0.016"/>
@@ -12,8 +10,8 @@
   <arg name="grid0_size_y" default="4"/>
   <arg name="world_frame"  default="/right_wrist"/>
   <arg name="link_frame"   default="/gaze"/>
+  <arg name="data_name"    default=""/>
   <param name="robot_description" textfile="$(arg urdf)" />
-  <param name="use_sim_time" type="bool" value="true" />
 
 
   <node ns="$(arg camera)" pkg="image_proc" type="image_proc" name="image_proc"/>
@@ -39,11 +37,10 @@
     <param name="world_frame" value="$(arg world_frame)"/>
     <param name="link_frame" value="$(arg link_frame)"/>
     <param name="chessboard_topic" value="$(arg camera)/pose0"/>
-    <param name="bag" value="$(arg bag)"/>
+    <param name="data_name" value="$(arg data_name)"/>
     <param name="camera" value="$(arg camera)"/>
   </node>
 
-  <node pkg="rosbag" type="play" name="bag_player" args="$(arg bag) --clock" required="true" />
 
 </launch>
 
