@@ -13,12 +13,12 @@
   <depend package="tf"/>
   <depend package="sensor_msgs"/>
   <depend package="message_filters"/>
+  <depend package="checkerboard_detector2"/>
   <depend package="rosbag"/>
   <depend package="visp"/>
   <depend package="common_rosdeps" />
   <depend package="fake_sync_template" />
   <rosdep name="yaml-cpp" />
-  <rosdep name="cvxopt"/>
 </package>
 
 
